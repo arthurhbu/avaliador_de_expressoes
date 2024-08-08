@@ -35,14 +35,12 @@ def printa_arvore(node, level=0, prefix="Raiz: "):
             else:
                 print(" " * ((level + 1) * 4) + "R--- None")
 
-                
 def lexer(expression):
     pattern = r'-?\d+|\d+|[()+\-*/]'
     tokens = re.findall(pattern, expression)
     tokens = [int(token) if re.fullmatch(r'-?\d+', token) else token for token in tokens]
     return tokens
 
-    
 def parser(list_tokens: list) -> list:
     
     operadores = ['+','-','*','/']
@@ -77,20 +75,69 @@ def parser(list_tokens: list) -> list:
             no_pilha.append(no_arvore)
             
     return no_pilha[0] if no_pilha else None
-    
-with open('./avaliador_de_expressoes/test_file.txt', 'r') as arquivo:
-    expressoes = []
-    expressoes = arquivo.readlines()
-    expressoes_formatadas = list(map(format_str, expressoes))
-    
-    tokens = lexer(expressoes_formatadas[0])
-    print(tokens)
-    arvore = parser(tokens)
-    printa_arvore(arvore)
-        
-        # for expressao in expressoes_formatadas:
-        #     tokens = lexer(expressao)
-        #     print(tokens)
-        #     arvore = parser(tokens)
+
+def eval_step(no_arvore: noArvore) -> noArvore:
+    if no_arvore.direita and no_arvore.esquerda:
+        if isinstance(no_arvore.esquerda.valor, int) and isinstance(no_arvore.direita.valor, int): 
+            if no_arvore.valor == '+':
+                return noArvore(no_arvore.esquerda.valor + no_arvore.direita.valor)
+            elif no_arvore.valor == '-':
+                return noArvore(no_arvore.esquerda.valor - no_arvore.direita.valor)
+            elif no_arvore.valor == '*':
+                return noArvore(no_arvore.esquerda.valor * no_arvore.direita.valor)
+            elif no_arvore.valor == '/':
+                return noArvore(no_arvore.esquerda.valor // no_arvore.direita.valor) 
             
+    return no_arvore
+    
+def eval_tree(no_arvore: noArvore) -> noArvore:
+    if no_arvore is None or (no_arvore.esquerda is None and no_arvore.direita is None):
+        return no_arvore
+    
+    no_arvore.esquerda = eval_tree(no_arvore.esquerda)
+    no_arvore.direita = eval_tree(no_arvore.direita)
+    
+    no_arvore_pos_eval = eval_step(no_arvore)
+    
+    return no_arvore_pos_eval      
+
+def to_string(no_arvore: noArvore) -> str:
+    if not no_arvore.direita and not no_arvore.esquerda:
+        return str(no_arvore.valor)
+    
+    str_esquerda = to_string(no_arvore.esquerda)
+    str_direita = to_string(no_arvore.direita)
+    
+    print(f"({str_esquerda} {no_arvore.valor} {str_direita})")
+    return f"({str_esquerda} {no_arvore.valor} {str_direita})"
+
+def evaluate_expressions(input_file: __file__) -> None:
+    
+    with open('./avaliador_de_expressoes/test_file.txt', 'r') as arquivo:
+        expressoes = []
+        expressoes = arquivo.readlines()
+        expressoes_formatadas = list(map(format_str, expressoes))
+        
+        for expressao in expressoes_formatadas:
+            tokens = lexer(expressao)
+            print('Expressão separada em tokens: ', tokens)
+            print('\n')
+            arvore = parser(tokens)
+            print('Arvore da expressão: ')
+            printa_arvore(arvore)
+            print('\n')
+            if arvore is None:
+                print('Expressão inválida!')
+                return
+            while arvore.esquerda or arvore.direita:
+                print('Transformação da árvore para expressão: ')
+                to_string(arvore)
+                arvore = eval_tree(arvore)
+            print('\n')
+            print('Resultado da expressão: ', arvore.valor)
+            print('\n')
+
+            
+if __name__ == "__main__":
+    evaluate_expressions('nada')
         
