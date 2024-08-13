@@ -1,6 +1,5 @@
 import re
-from igraph import Graph, plot
-
+import time
 
 class noArvore:
     def __init__(self, valor):
@@ -22,16 +21,17 @@ def maior_precedencia(op):
         return 2
     return 0
 
-def printa_arvore(node, level=0, prefix="Raiz: "):
+def printa_arvore(node, file_saida, level=0, prefix="Raiz: "):
     if node is not None:
-        print(" " * (level * 4) + prefix + str(node.valor))
+        result = " " * (level * 4) + prefix + str(node.valor)
+        print(result, file=file_saida)
         if node.esquerda or node.direita:
             if node.esquerda:
-                printa_arvore(node.esquerda, level + 1, "L--- ")
+                printa_arvore(node.esquerda, file_saida, level + 1, "L--- ")
             else:
                 print(" " * ((level + 1) * 4) + "L--- None")
             if node.direita:
-                printa_arvore(node.direita, level + 1, "R--- ")
+                printa_arvore(node.direita, file_saida, level + 1, "R--- ")
             else:
                 print(" " * ((level + 1) * 4) + "R--- None")
 
@@ -101,43 +101,58 @@ def eval_tree(no_arvore: noArvore) -> noArvore:
     
     return no_arvore_pos_eval      
 
-def to_string(no_arvore: noArvore) -> str:
+def to_string(no_arvore: noArvore, file_saida) -> str:
     if not no_arvore.direita and not no_arvore.esquerda:
         return str(no_arvore.valor)
     
-    str_esquerda = to_string(no_arvore.esquerda)
-    str_direita = to_string(no_arvore.direita)
+    str_esquerda = to_string(no_arvore.esquerda, file_saida)
+    str_direita = to_string(no_arvore.direita, file_saida)
     
-    print(f"({str_esquerda} {no_arvore.valor} {str_direita})")
+    print(f"({str_esquerda} {no_arvore.valor} {str_direita})", file=file_saida)
     return f"({str_esquerda} {no_arvore.valor} {str_direita})"
+
+
 
 def evaluate_expressions(input_file: __file__) -> None:
     
-    with open('./avaliador_de_expressoes/test_file.txt', 'r') as arquivo:
-        expressoes = []
-        expressoes = arquivo.readlines()
-        expressoes_formatadas = list(map(format_str, expressoes))
+    start = time.time()
+    with open(input_file, 'r') as arquivo:
+        with open('resultado_expressoes.txt', 'w', encoding='utf8') as saida:
+            expressoes = []
+            expressoes = arquivo.readlines()
+            expressoes_formatadas = list(map(format_str, expressoes))
         
-        for expressao in expressoes_formatadas:
-            tokens = lexer(expressao)
-            print('Expressão separada em tokens: ', tokens)
-            print('\n')
-            arvore = parser(tokens)
-            print('Arvore da expressão: ')
-            printa_arvore(arvore)
-            print('\n')
-            if arvore is None:
-                print('Expressão inválida!')
-                return
-            while arvore.esquerda or arvore.direita:
-                print('Transformação da árvore para expressão: ')
-                to_string(arvore)
-                arvore = eval_tree(arvore)
-            print('\n')
-            print('Resultado da expressão: ', arvore.valor)
-            print('\n')
-
+            for expressao in expressoes_formatadas:
+                tokens = lexer(expressao)
+                print('Expressão separada em tokens: ', tokens, file=saida)
+                saida.write('\n')
+                arvore = parser(tokens)
+                print('Arvore da expressão: ',file=saida)
+                printa_arvore(arvore, saida, 0)
+                saida.write('\n')
+                if arvore is None:
+                    print('Expressão inválida!')
+                    return
+                while arvore.esquerda or arvore.direita:
+                    print('Transformação da árvore para expressão: ',file=saida)
+                    to_string(arvore, saida)
+                    arvore = eval_tree(arvore)
+                saida.write('\n')
+                print('Resultado da expressão: ', arvore.valor, file=saida)
+                saida.write('\n')
+                print('________________________________________________________________________________________________________________________________\n\n', file=saida)
             
+            end = time.time()
+            time_elapsed = end - start
+            temp_exec = f'Tempo de execução da bateria de testes: {time_elapsed}'
+            print(temp_exec, file=saida)
+            print(temp_exec)
+
+
 if __name__ == "__main__":
-    evaluate_expressions('nada')
+    
+    #Escolha da bateria de teste
+    numero_bateria = int(input('Digite a bateria de teste que deseja realizar (1, 2 ou 3): '))
+    teste_file_name = f'bateria_teste_{numero_bateria}.txt'
+    evaluate_expressions(teste_file_name)
         
